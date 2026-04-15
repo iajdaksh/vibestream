@@ -1,12 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import path from 'path'
+import { ensureYtDlp } from '@/lib/ytdlp-path'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
-
-const YT_DLP_BIN = process.platform === 'win32'
-  ? path.join(process.cwd(), 'yt-dlp.exe')
-  : path.join(process.cwd(), 'yt-dlp')
 
 export interface SearchResult {
   id: string
@@ -23,10 +19,10 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    const YT_DLP_BIN = await ensureYtDlp()
     const { default: YTDlpWrap } = await import('yt-dlp-wrap-extended')
     const ytDlp = new YTDlpWrap(YT_DLP_BIN)
 
-    // ytsearch5 returns 5 results as newline-delimited JSON
     const raw: string = await ytDlp.execPromise([
       `ytsearch6:${q}`,
       '--dump-json',

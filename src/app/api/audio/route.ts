@@ -1,14 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import path from 'path'
+import { ensureYtDlp } from '@/lib/ytdlp-path'
 import https from 'https'
 import http from 'http'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
-
-const YT_DLP_BIN = process.platform === 'win32'
-  ? path.join(process.cwd(), 'yt-dlp.exe')
-  : path.join(process.cwd(), 'yt-dlp')
 
 // In-memory URL cache (4hr TTL — YouTube URLs expire ~6hr)
 const urlCache = new Map<string, { url: string; mimeType: string; expiresAt: number }>()
@@ -18,6 +14,7 @@ async function getAudioUrl(videoId: string): Promise<{ url: string; mimeType: st
   const cached = urlCache.get(videoId)
   if (cached && cached.expiresAt > Date.now()) return cached
 
+  const YT_DLP_BIN = await ensureYtDlp()
   const { default: YTDlpWrap } = await import('yt-dlp-wrap-extended')
   const ytDlp = new YTDlpWrap(YT_DLP_BIN)
 
@@ -56,7 +53,6 @@ function proxyFetch(upstreamUrl: string, rangeHeader: string | null): Promise<Pr
       Origin: 'https://www.youtube.com',
     }
 
-    // Forward the Range header so seeking works
     if (rangeHeader) reqHeaders['Range'] = rangeHeader
 
     lib
@@ -69,7 +65,6 @@ function proxyFetch(upstreamUrl: string, rangeHeader: string | null): Promise<Pr
             return
           }
 
-          // Pass back the headers the browser needs for seeking
           const outHeaders: Record<string, string> = {}
           if (res.headers['content-length'])
             outHeaders['Content-Length'] = res.headers['content-length'] as string
@@ -89,7 +84,6 @@ function proxyFetch(upstreamUrl: string, rangeHeader: string | null): Promise<Pr
 
           resolve({
             stream,
-            // Preserve 206 Partial Content so the browser knows it got a range
             status: res.statusCode ?? 200,
             headers: outHeaders,
           })
