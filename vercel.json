@@ -1,0 +1,10 @@
+{
+  "functions": {
+    "src/app/api/audio/route.ts": { "maxDuration": 10 },
+    "src/app/api/meta/route.ts": { "maxDuration": 30 },
+    "src/app/api/search/route.ts": { "maxDuration": 30 }
+  },
+  "env": {
+    "BACKEND_URL": "@backend-url"
+  }
+}

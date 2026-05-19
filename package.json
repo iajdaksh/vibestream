@@ -1,0 +1,29 @@
+{
+  "name": "vibestream",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "node scripts/setup-yt-dlp.mjs && next build",
+    "start": "next start",
+    "postinstall": "node scripts/setup-yt-dlp.mjs"
+  },
+  "dependencies": {
+    "@distube/ytdl-core": "^4.16.12",
+    "next": "15.5.15",
+    "react": "^18",
+    "react-dom": "^18",
+    "tone": "^14.7.77",
+    "yt-dlp-wrap-extended": "^2.3.15",
+    "ytdl-core": "^4.11.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "autoprefixer": "^10.0.1",
+    "postcss": "^8",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5"
+  }
+}
