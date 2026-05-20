@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { ensureYtDlp } from '@/lib/ytdlp-path'
 import YTDlpWrap from 'yt-dlp-wrap-extended'
+import path from 'path'
 
 export const runtime = 'nodejs'
 // Allow longer duration if on pro plan, but hobby is max 10/60
@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const binPath = await ensureYtDlp()
+    const binPath = path.join(process.cwd(), process.platform === 'win32' ? 'yt-dlp.exe' : 'yt-dlp')
     const ytDlp = new YTDlpWrap(binPath)
     
     // Get info quickly
