@@ -154,13 +154,21 @@ function PlayerContent() {
   useEffect(() => {
     if (!videoId) return
     fetch(`/api/meta?v=${videoId}`)
-      .then(r => r.json())
+      .then(async r => {
+        const d = await r.json()
+        if (!r.ok) throw new Error(d.error || 'Failed to fetch meta')
+        return d
+      })
       .then(d => {
         setTrackTitle(d.title || 'Unknown Track')
         setTrackAuthor(d.author || '')
         setTrackThumb(d.thumbnail || '')
         if (d.duration) setDuration(d.duration)
-      }).catch(() => {})
+      }).catch((err) => {
+        console.error("Meta fetch error:", err)
+        showToast("⚠ " + err.message)
+        setAudioError(true)
+      })
   }, [videoId])
 
   // ── audio element ───────────────────────────────────────────────────────────

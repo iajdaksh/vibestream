@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import YTDlpWrap from 'yt-dlp-wrap-extended'
 import path from 'path'
+import fs from 'fs'
 
 export const runtime = 'nodejs'
 // Allow longer duration if on pro plan, but hobby is max 10/60
