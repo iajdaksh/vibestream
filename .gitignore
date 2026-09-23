@@ -4,6 +4,9 @@ node_modules
 .env.local
 .DS_Store
 
+# Local browser preview profile and cache
+/.browser-preview/
+
 # Logs
 *.log
 dev.log

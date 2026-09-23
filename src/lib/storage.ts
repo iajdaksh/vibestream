@@ -92,7 +92,10 @@ export function clearQueue() {
 // ── Global bass ───────────────────────────────────────────────────────────
 
 export function getGlobalBass(): number {
-  return Number(localStorage.getItem(KEYS.bass) || '0')
+  try {
+    const value = Number(localStorage.getItem(KEYS.bass) || '0')
+    return Number.isFinite(value) ? value : 0
+  } catch { return 0 }
 }
 
 export function setGlobalBass(val: number) {

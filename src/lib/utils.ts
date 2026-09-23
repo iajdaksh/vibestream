@@ -1,3 +1,5 @@
+import type { IconName } from '@/components/Icon'
+
 export interface Theme {
   id: string
   name: string
@@ -61,7 +63,7 @@ export const themes: Record<string, Theme> = {
   },
 }
 
-export function getCurrentTheme(): Theme {
+function getTimeTheme(): Theme {
   const h = new Date().getHours()
   if (h >= 5 && h < 9) return themes.dawn
   if (h >= 9 && h < 12) return themes.morning
@@ -98,7 +100,7 @@ export interface VibeConfig {
   statusLabel: string
   rate: number
   statusColor: string
-  emoji: string
+  icon: IconName
 }
 
 export const vibeConfigs: Record<string, VibeConfig> = {
@@ -108,7 +110,7 @@ export const vibeConfigs: Record<string, VibeConfig> = {
     statusLabel: 'NORMAL MODE',
     rate: 1.0,
     statusColor: '#A78BFA',
-    emoji: '🎵',
+    icon: 'normal',
   },
   lofi: {
     id: 'lofi',
@@ -116,7 +118,7 @@ export const vibeConfigs: Record<string, VibeConfig> = {
     statusLabel: 'LOFI VIBES',
     rate: 0.85,
     statusColor: '#FFC93C',
-    emoji: '☕',
+    icon: 'lofi',
   },
   slowed: {
     id: 'slowed',
@@ -124,7 +126,7 @@ export const vibeConfigs: Record<string, VibeConfig> = {
     statusLabel: 'SLOWED + REVERB',
     rate: 0.75,
     statusColor: '#60A5FA',
-    emoji: '🌙',
+    icon: 'slowed',
   },
   nightcore: {
     id: 'nightcore',
@@ -132,7 +134,7 @@ export const vibeConfigs: Record<string, VibeConfig> = {
     statusLabel: 'NIGHTCORE ENERGY',
     rate: 1.25,
     statusColor: '#F472B6',
-    emoji: '⚡',
+    icon: 'nightcore',
   },
   '3am': {
     id: '3am',
@@ -140,46 +142,51 @@ export const vibeConfigs: Record<string, VibeConfig> = {
     statusLabel: '3AM STORM MODE',
     rate: 0.8,
     statusColor: '#6EE7B7',
-    emoji: '🌧️',
+    icon: '3am',
   },
   '8d': {
     id: '8d',
-    label: '8D Audio 🎧',
+    label: '8D Audio',
     statusLabel: '8D SPATIAL MODE',
     rate: 1.0,
     statusColor: '#34D399',
-    emoji: '🎧',
+    icon: '8d',
   },
   phonk: {
     id: 'phonk',
-    label: 'Phonk 🔥',
+    label: 'Phonk',
     statusLabel: 'PHONK MODE',
     rate: 0.92,
     statusColor: '#F87171',
-    emoji: '🔥',
+    icon: 'phonk',
   },
   study: {
     id: 'study',
-    label: 'Study 📖',
+    label: 'Study',
     statusLabel: 'STUDY MODE',
     rate: 1.0,
     statusColor: '#67E8F9',
-    emoji: '📖',
+    icon: 'study',
   },
   bedroom: {
     id: 'bedroom',
-    label: 'Bedroom Pop 🌙',
+    label: 'Bedroom Pop',
     statusLabel: 'BEDROOM POP',
     rate: 0.95,
     statusColor: '#F9A8D4',
-    emoji: '🌙',
+    icon: 'bedroom',
   },
   drill: {
     id: 'drill',
-    label: 'Drill 🥁',
+    label: 'Drill',
     statusLabel: 'DRILL MODE',
     rate: 1.0,
     statusColor: '#A3E635',
-    emoji: '🥁',
+    icon: 'drill',
   },
+}
+
+// PlayRadio brand stays warm and neutral; time-of-day ambiance is retained.
+export function getCurrentTheme(): Theme {
+  return { ...getTimeTheme(), primary: '#c9a15a', bg1: '#0e0b09', bg2: '#16110d' }
 }

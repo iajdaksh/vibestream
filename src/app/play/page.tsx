@@ -1,6 +1,9 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback, Suspense } from 'react'
+import Icon from '@/components/Icon'
+import Brand from '@/components/Brand'
+import Footer from '@/components/Footer'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { getCurrentTheme, formatTime, vibeConfigs, parseYouTubeId, Theme } from '@/lib/utils'
 import { VibeAudioEngine, VibeId, CustomParams } from '@/lib/vibeAudio'
@@ -45,7 +48,7 @@ function generateVibeCard(
     ctx.strokeStyle = 'rgba(255,255,255,0.05)'; ctx.lineWidth = 2; ctx.stroke()
   }
   ctx.beginPath(); ctx.arc(0, 0, 65, 0, Math.PI * 2)
-  ctx.fillStyle = '#1e0f30'; ctx.fill()
+  ctx.fillStyle = '#211910'; ctx.fill()
   ctx.beginPath(); ctx.arc(0, 0, 64, 0, Math.PI * 2)
   ctx.strokeStyle = primaryColor + '60'; ctx.lineWidth = 2; ctx.stroke()
   ctx.beginPath(); ctx.arc(0, 0, 8, 0, Math.PI * 2)
@@ -53,7 +56,7 @@ function generateVibeCard(
   ctx.restore()
 
   // Title
-  ctx.font = 'bold 32px Outfit, sans-serif'
+  ctx.font = 'bold 32px Georgia, serif'
   ctx.fillStyle = '#fff'
   ctx.textAlign = 'center'
   const words = title.split(' ')
@@ -68,25 +71,25 @@ function generateVibeCard(
   lines.slice(0, 2).forEach((l, i) => ctx.fillText(l, 400, titleY + i * 40))
 
   // Author
-  ctx.font = '20px Space Mono, monospace'
+  ctx.font = '20px sans-serif'
   ctx.fillStyle = primaryColor + 'CC'
   ctx.fillText(author, 400, titleY + Math.min(lines.length, 2) * 40 + 28)
 
   // Vibe badge
-  ctx.font = 'bold 16px Space Mono, monospace'
-  ctx.fillStyle = '#1a0b2e'
+  ctx.font = 'bold 16px sans-serif'
+  ctx.fillStyle = '#0e0b09'
   const badgeText = vibe.toUpperCase() + ' MODE'
   const bw = ctx.measureText(badgeText).width + 32
   const bx = 400 - bw / 2; const by = titleY + Math.min(lines.length, 2) * 40 + 68
   ctx.fillStyle = primaryColor
   ctx.beginPath(); ctx.roundRect(bx, by, bw, 30, 15); ctx.fill()
-  ctx.fillStyle = '#1a0b2e'
+  ctx.fillStyle = '#0e0b09'
   ctx.fillText(badgeText, 400, by + 20)
 
   // Branding
-  ctx.font = 'bold 20px Outfit, sans-serif'
+  ctx.font = 'bold 20px sans-serif'
   ctx.fillStyle = 'rgba(255,255,255,0.35)'
-  ctx.fillText('VIBESTREAM', 400, 764)
+  ctx.fillText('VIBE / PLAYRADIO.BUZZ', 400, 764)
 
   return canvas.toDataURL('image/png')
 }
@@ -99,7 +102,7 @@ function PlayerContent() {
   const initialVibe = (searchParams.get('vibe') || 'normal') as VibeId
   const initialBassParam = Number(searchParams.get('bass') || '0')
 
-  const [theme, setTheme] = useState<Theme | null>(null)
+  const [baseTheme, setTheme] = useState<Theme | null>(null)
   const [vibe, setVibeState] = useState<VibeId>(initialVibe)
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
@@ -138,6 +141,10 @@ function PlayerContent() {
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const currentVibe = vibeConfigs[vibe] || vibeConfigs.normal
+  const theme = baseTheme ? { ...baseTheme, primary: isPlaying && vibe !== 'normal' ? currentVibe.statusColor : baseTheme.primary } : null
+  useEffect(() => {
+    document.documentElement.style.setProperty('--c-primary', theme?.primary || '#c9a15a')
+  }, [theme?.primary])
   const playbackRate = vibe === 'custom' ? customSpeed / 100 : currentVibe.rate
 
   // ── theme + init ────────────────────────────────────────────────────────────
@@ -166,7 +173,7 @@ function PlayerContent() {
         if (d.duration) setDuration(d.duration)
       }).catch((err) => {
         console.error("Meta fetch error:", err)
-        showToast("⚠ " + err.message)
+        showToast(err.message)
         setTrackTitle('YouTube Track')
       })
   }, [videoId])
@@ -323,7 +330,7 @@ function PlayerContent() {
     const p = savePreset({ name: presetName.trim(), speed: customSpeed, reverb: customReverb, lowpass: customLowpass, bass: customBass })
     setPresets(getPresets())
     setPresetName('')
-    showToast(`"${p.name}" save ho gaya! 🎛`)
+    showToast(`"${p.name}" save ho gaya!`)
   }
   function handleLoadPreset(p: VibePreset) {
     setCustomSpeed(p.speed); setCustomReverb(p.reverb)
@@ -346,7 +353,7 @@ function PlayerContent() {
   }
   function addToQueue(item: QueueItem) {
     const q = [...queue, item]; setQueue(q); saveQueue(q)
-    showToast(`Queue mein add ho gaya! 🎵`)
+    showToast(`Queue mein add ho gaya!`)
   }
   function removeFromQueue(idx: number) {
     const q = queue.filter((_, i) => i !== idx); setQueue(q); saveQueue(q)
@@ -355,16 +362,16 @@ function PlayerContent() {
   // ── vibe card ──────────────────────────────────────────────────────────────
   function handleShareCard() {
     if (!theme) return
-    const dataUrl = generateVibeCard(trackTitle || 'Vibestream', trackAuthor, vibe, theme.primary, theme.bg1)
+    const dataUrl = generateVibeCard(trackTitle || 'Vibe by PlayRadio', trackAuthor, vibe, theme.primary, theme.bg1)
     const a = document.createElement('a')
     a.href = dataUrl; a.download = 'vibecard.png'; a.click()
-    showToast('Vibe card download ho gaya! 🎴')
+    showToast('Vibe card download ho gaya!')
   }
 
   // ── share link ──────────────────────────────────────────────────────────────
   function shareLink() {
     const url = `${window.location.origin}/play?v=${videoId}&vibe=${vibe}&t=${Math.floor(currentTime)}`
-    navigator.clipboard.writeText(url).then(() => showToast('Link copy ho gaya! 🔗'))
+    navigator.clipboard.writeText(url).then(() => showToast('Link copy ho gaya!'))
       .catch(() => showToast('Copy failed'))
   }
 
@@ -376,7 +383,7 @@ function PlayerContent() {
     try {
       const res = await fetch(`/api/meta?v=${id}`)
       const d = await res.json()
-      if (d.error) { showToast('Song info nahi mila 😕'); return }
+      if (d.error) { showToast('Song info nahi mila'); return }
       addToQueue({ id, title: d.title, author: d.author, thumbnail: d.thumbnail })
       setQueueUrl('')
     } catch { showToast('Error aayi, try again') }
@@ -392,34 +399,35 @@ function PlayerContent() {
   if (!theme || !videoId) return null
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0
-  const vibeList = [...Object.values(vibeConfigs), { id: 'custom', label: 'Custom ⚙', statusLabel: '', rate: 1, statusColor: '', emoji: '' }]
+  const vibeList = [...Object.values(vibeConfigs), { id: 'custom', label: 'Custom', statusLabel: '', rate: 1, statusColor: '', icon: 'custom' as const }]
 
   return (
-    <main style={{ minHeight: '100vh', background: theme.bg1, position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+    <main className="player-shell" data-playing={isPlaying} style={{ minHeight: '100vh', background: theme.bg1, position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
 
       {/* BG */}
-      <div style={{ position: 'absolute', inset: 0, background: theme.gradient, opacity: 0.35, pointerEvents: 'none', zIndex: 0 }} />
+      <div style={{ position: 'absolute', inset: 0, background: theme.gradient, opacity: isPlaying ? 0.3 : 0.1, transition: 'opacity 1s', pointerEvents: 'none', zIndex: 0 }} />
       <VibeBackground vibe={vibe} isPlaying={isPlaying} />
 
-      <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', flex: 1 }}>
+      <div className="player-content" style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', flex: 1 }}>
+        <Brand />
 
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 1.25rem 0.75rem' }}>
           <button onClick={() => router.push('/')}
-            style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)', borderRadius: 10, color: 'var(--c-text)', padding: '8px 14px', fontSize: '0.82rem', fontFamily: 'Outfit, sans-serif', cursor: 'pointer' }}>
-            ← Back
+            style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)', borderRadius: 10, color: 'var(--c-text)', padding: '8px 14px', fontSize: '0.82rem', fontFamily: 'var(--font-body)', cursor: 'pointer' }}>
+            <Icon name="back" size={16} /> Back
           </button>
-          <span style={{ fontFamily: 'Space Mono, monospace', fontSize: '0.65rem', color: 'var(--c-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: 'var(--c-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
             Now Playing
           </span>
           <div style={{ display: 'flex', gap: 6 }}>
-            <button onClick={() => setShowQueue(q => !q)}
-              style={{ background: showQueue ? theme.primary : 'var(--c-surface)', border: `1px solid ${showQueue ? theme.primary : 'var(--c-border)'}`, borderRadius: 10, color: showQueue ? '#1a0b2e' : 'var(--c-text)', padding: '8px 12px', fontSize: '0.82rem', fontFamily: 'Outfit, sans-serif', cursor: 'pointer' }}>
-              📋 {queue.length > 0 ? queue.length : ''}
+            <button aria-label="Open queue" onClick={() => setShowQueue(q => !q)}
+              style={{ background: showQueue ? theme.primary : 'var(--c-surface)', border: `1px solid ${showQueue ? theme.primary : 'var(--c-border)'}`, borderRadius: 10, color: showQueue ? '#0e0b09' : 'var(--c-text)', padding: '8px 12px', fontSize: '0.82rem', fontFamily: 'var(--font-body)', cursor: 'pointer' }}>
+              <Icon name="queue" /> {queue.length > 0 ? queue.length : ''}
             </button>
-            <button onClick={shareLink}
-              style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)', borderRadius: 10, color: 'var(--c-text)', padding: '8px 12px', fontSize: '0.82rem', fontFamily: 'Outfit, sans-serif', cursor: 'pointer' }}>
-              🔗
+            <button aria-label="Copy track link" onClick={shareLink}
+              style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)', borderRadius: 10, color: 'var(--c-text)', padding: '8px 12px', fontSize: '0.82rem', fontFamily: 'var(--font-body)', cursor: 'pointer' }}>
+              <Icon name="link" />
             </button>
           </div>
         </div>
@@ -437,8 +445,8 @@ function PlayerContent() {
           {/* Track info */}
           <div style={{ textAlign: 'center', marginBottom: '0.75rem', width: '100%', maxWidth: 400 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: '0.4rem' }}>
-              {!loading && <div className="blink-dot" style={{ width: 7, height: 7, borderRadius: '50%', background: vibe === 'custom' ? '#FB923C' : currentVibe.statusColor }} />}
-              <span style={{ fontFamily: 'Space Mono, monospace', fontSize: '0.65rem', color: 'var(--c-muted)', letterSpacing: '0.08em' }}>
+              {!loading && <div className={isPlaying ? 'blink-dot' : undefined} style={{ width: 7, height: 7, borderRadius: '50%', background: vibe === 'custom' ? '#FB923C' : currentVibe.statusColor }} />}
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: 'var(--c-muted)', letterSpacing: '0.08em' }}>
                 {loading ? 'Loading audio...' : vibe === 'custom' ? 'CUSTOM VIBE' : currentVibe.statusLabel}
               </span>
             </div>
@@ -449,10 +457,10 @@ function PlayerContent() {
                 <div className="skeleton" style={{ height: 14, width: '50%', margin: '0 auto' }} />
               </>
             ) : audioError ? (
-              <p style={{ color: '#f87171', fontSize: '0.9rem' }}>⚠ Can't Load Audio</p>
+              <p style={{ color: '#f87171', fontSize: '0.9rem' }}><Icon name="alert" /> Can't Load Audio</p>
             ) : (
               <>
-                <h2 style={{ fontFamily: 'Outfit, sans-serif', fontSize: '1.05rem', fontWeight: 700, lineHeight: 1.3, marginBottom: '0.25rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <h2 style={{ fontFamily: 'var(--font-body)', fontSize: '1.05rem', fontWeight: 700, lineHeight: 1.3, marginBottom: '0.25rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {trackTitle || 'Loading...'}
                 </h2>
                 {trackAuthor && <p style={{ fontSize: '0.82rem', color: 'var(--c-muted)' }}>{trackAuthor}</p>}
@@ -470,7 +478,7 @@ function PlayerContent() {
             <div onClick={seek} style={{ height: 4, background: 'rgba(255,255,255,0.1)', borderRadius: 100, marginBottom: '0.4rem', cursor: 'pointer' }}>
               <div style={{ height: '100%', width: `${progress}%`, background: theme.primary, borderRadius: 100, transition: 'width 0.3s linear' }} />
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'Space Mono, monospace', fontSize: '0.68rem', color: 'var(--c-muted)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: '0.68rem', color: 'var(--c-muted)' }}>
               <span>{formatTime(currentTime)}</span>
               <span>{formatTime(duration)}</span>
             </div>
@@ -478,47 +486,47 @@ function PlayerContent() {
 
           {/* Controls */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', marginBottom: '1.25rem' }}>
-            <button onClick={() => { if (audioRef.current) audioRef.current.currentTime = Math.max(0, currentTime - 10) }}
-              style={{ background: 'none', border: 'none', color: 'var(--c-muted)', fontSize: '1.3rem', cursor: 'pointer' }}>⏪</button>
+            <button aria-label="Rewind 10 seconds" onClick={() => { if (audioRef.current) audioRef.current.currentTime = Math.max(0, currentTime - 10) }}
+              style={{ background: 'none', border: 'none', color: 'var(--c-muted)', fontSize: '1.3rem', cursor: 'pointer' }}><Icon name="rewind" size={22} /></button>
 
-            <button onClick={togglePlay} disabled={audioError}
-              style={{ width: 58, height: 58, borderRadius: '50%', background: audioError ? '#555' : theme.primary, border: 'none', color: '#1a0b2e', fontSize: loading ? '0.65rem' : '1.3rem', cursor: audioError ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: audioError ? 'none' : `0 0 28px ${theme.primary}60`, fontFamily: 'Space Mono, monospace' }}>
-              {loading ? '...' : isPlaying ? '⏸' : '▶'}
+            <button aria-label={isPlaying ? 'Pause' : 'Play'} onClick={togglePlay} disabled={loading || audioError}
+              style={{ width: 58, height: 58, borderRadius: '50%', background: audioError ? '#555' : theme.primary, border: 'none', color: '#0e0b09', fontSize: loading ? '0.65rem' : '1.3rem', cursor: audioError ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: audioError ? 'none' : `0 0 28px ${theme.primary}60`, fontFamily: 'var(--font-mono)' }}>
+              {loading ? <span className="loading-spinner" /> : <Icon name={isPlaying ? 'pause' : 'play'} size={24} />}
             </button>
 
-            <button onClick={() => { if (audioRef.current) audioRef.current.currentTime = Math.min(duration, currentTime + 10) }}
-              style={{ background: 'none', border: 'none', color: 'var(--c-muted)', fontSize: '1.3rem', cursor: 'pointer' }}>⏩</button>
+            <button aria-label="Forward 10 seconds" onClick={() => { if (audioRef.current) audioRef.current.currentTime = Math.min(duration, currentTime + 10) }}
+              style={{ background: 'none', border: 'none', color: 'var(--c-muted)', fontSize: '1.3rem', cursor: 'pointer' }}><Icon name="forward" size={22} /></button>
 
             {/* Next in queue */}
             {queue.length > 0 && (
-              <button onClick={playNext}
-                style={{ background: 'none', border: 'none', color: theme.primary, fontSize: '1.1rem', cursor: 'pointer' }}>⏭</button>
+              <button aria-label="Next track" onClick={playNext}
+                style={{ background: 'none', border: 'none', color: theme.primary, fontSize: '1.1rem', cursor: 'pointer' }}><Icon name="next" size={22} /></button>
             )}
           </div>
 
           {/* Action buttons */}
           <div style={{ display: 'flex', gap: 8, marginBottom: '0.75rem' }}>
             <button onClick={handleShareCard}
-              style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)', borderRadius: 10, color: 'var(--c-muted)', padding: '7px 14px', fontSize: '0.78rem', cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }}>
-              🎴 Vibe Card
+              style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)', borderRadius: 10, color: 'var(--c-muted)', padding: '7px 14px', fontSize: '0.78rem', cursor: 'pointer', fontFamily: 'var(--font-body)' }}>
+              <Icon name="card" size={16} /> Vibe Card
             </button>
-            <button onClick={() => { setLoop(l => !l); showToast(loop ? 'Loop off' : 'Loop on 🔁') }}
-              style={{ background: loop ? `${theme.primary}22` : 'var(--c-surface)', border: `1px solid ${loop ? theme.primary : 'var(--c-border)'}`, borderRadius: 10, color: loop ? theme.primary : 'var(--c-muted)', padding: '7px 14px', fontSize: '0.78rem', cursor: 'pointer', fontFamily: 'Outfit, sans-serif', transition: 'all 0.2s' }}>
-              🔁 Loop
+            <button aria-pressed={loop} onClick={() => { setLoop(l => !l); showToast(loop ? 'Loop off' : 'Loop on') }}
+              style={{ background: loop ? `${theme.primary}22` : 'var(--c-surface)', border: `1px solid ${loop ? theme.primary : 'var(--c-border)'}`, borderRadius: 10, color: loop ? theme.primary : 'var(--c-muted)', padding: '7px 14px', fontSize: '0.78rem', cursor: 'pointer', fontFamily: 'var(--font-body)', transition: 'all 0.2s' }}>
+              <Icon name="repeat" size={16} /> Loop
             </button>
           </div>
         </div>
 
         {/* Vibe selector */}
         <div style={{ padding: '0 1.25rem 0.5rem' }}>
-          <p style={{ fontFamily: 'Space Mono, monospace', fontSize: '0.6rem', color: 'var(--c-muted)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '0.5rem' }}>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: 'var(--c-muted)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '0.5rem' }}>
             Choose Vibe
           </p>
-          <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none' }}>
+          <div className="vibe-grid">
             {vibeList.map((v) => (
-              <button key={v.id} onClick={() => handleVibeChange(v.id as VibeId)}
-                style={{ flexShrink: 0, background: vibe === v.id ? theme.primary : 'var(--c-surface)', border: `1.5px solid ${vibe === v.id ? theme.primary : 'var(--c-border)'}`, borderRadius: 100, padding: '7px 16px', fontSize: '0.8rem', fontWeight: 600, color: vibe === v.id ? '#1a0b2e' : 'var(--c-muted)', cursor: 'pointer', fontFamily: 'Outfit, sans-serif', whiteSpace: 'nowrap', transition: 'all 0.2s', boxShadow: vibe === v.id ? `0 0 18px ${theme.primary}50` : 'none' }}>
-                {v.label}
+              <button aria-pressed={vibe === v.id} key={v.id} onClick={() => handleVibeChange(v.id as VibeId)}
+                style={{ flexShrink: 0, background: vibe === v.id ? theme.primary : 'var(--c-surface)', border: `1.5px solid ${vibe === v.id ? theme.primary : 'var(--c-border)'}`, borderRadius: 100, padding: '7px 16px', fontSize: '0.8rem', fontWeight: 600, color: vibe === v.id ? '#0e0b09' : 'var(--c-muted)', cursor: 'pointer', fontFamily: 'var(--font-body)', whiteSpace: 'nowrap', transition: 'all 0.2s', boxShadow: vibe === v.id ? `0 0 18px ${theme.primary}50` : 'none' }}>
+                <Icon name={v.icon} size={16} /> {v.label}
               </button>
             ))}
           </div>
@@ -534,22 +542,22 @@ function PlayerContent() {
               { label: 'Bass',   value: customBass,   min: -6,  max: 6,     step: 1,   display: (v: number) => (v>=0?'+':'')+v+'dB',    onChange: handleCustomBass },
             ].map((sl) => (
               <div key={sl.label} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: '0.6rem' }}>
-                <label style={{ fontSize: '0.72rem', color: 'var(--c-muted)', width: 52, flexShrink: 0, fontFamily: 'Space Mono, monospace' }}>{sl.label}</label>
-                <input type="range" min={sl.min} max={sl.max} step={sl.step} value={sl.value}
+                <label style={{ fontSize: '0.72rem', color: 'var(--c-muted)', width: 52, flexShrink: 0, fontFamily: 'var(--font-mono)' }}>{sl.label}</label>
+                <input aria-label={sl.label} type="range" min={sl.min} max={sl.max} step={sl.step} value={sl.value}
                   onChange={(e) => sl.onChange(Number(e.target.value))}
                   style={{ flex: 1, accentColor: theme.primary }} />
-                <span style={{ fontSize: '0.68rem', fontFamily: 'Space Mono, monospace', color: theme.primary, width: 52, textAlign: 'right' }}>{sl.display(sl.value)}</span>
+                <span style={{ fontSize: '0.68rem', fontFamily: 'var(--font-mono)', color: theme.primary, width: 52, textAlign: 'right' }}>{sl.display(sl.value)}</span>
               </div>
             ))}
 
             {/* Preset save */}
             <div style={{ display: 'flex', gap: 8, marginTop: '0.5rem', alignItems: 'center' }}>
-              <input value={presetName} onChange={(e) => setPresetName(e.target.value)}
+              <input aria-label="Preset name" value={presetName} onChange={(e) => setPresetName(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSavePreset()}
                 placeholder="Preset name..."
-                style={{ flex: 1, padding: '6px 10px', background: 'rgba(255,255,255,0.06)', border: '1px solid var(--c-border)', borderRadius: 8, color: 'var(--c-text)', fontSize: '0.78rem', fontFamily: 'Outfit, sans-serif', outline: 'none' }} />
+                style={{ flex: 1, padding: '6px 10px', background: 'rgba(255,255,255,0.06)', border: '1px solid var(--c-border)', borderRadius: 8, color: 'var(--c-text)', fontSize: '0.78rem', fontFamily: 'var(--font-body)', outline: 'none' }} />
               <button onClick={handleSavePreset}
-                style={{ background: theme.primary, color: '#1a0b2e', border: 'none', borderRadius: 8, padding: '6px 12px', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'Outfit, sans-serif', whiteSpace: 'nowrap' }}>
+                style={{ background: theme.primary, color: '#0e0b09', border: 'none', borderRadius: 8, padding: '6px 12px', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-body)', whiteSpace: 'nowrap' }}>
                 Save
               </button>
             </div>
@@ -560,11 +568,11 @@ function PlayerContent() {
                 {presets.map((p) => (
                   <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 0, background: 'var(--c-surface)', border: '1px solid var(--c-border)', borderRadius: 8 }}>
                     <button onClick={() => handleLoadPreset(p)}
-                      style={{ background: 'none', border: 'none', color: 'var(--c-text)', padding: '5px 10px', fontSize: '0.75rem', cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }}>
+                      style={{ background: 'none', border: 'none', color: 'var(--c-text)', padding: '5px 10px', fontSize: '0.75rem', cursor: 'pointer', fontFamily: 'var(--font-body)' }}>
                       {p.name}
                     </button>
-                    <button onClick={() => handleDeletePreset(p.id)}
-                      style={{ background: 'none', border: 'none', color: 'var(--c-muted)', padding: '5px 8px 5px 0', fontSize: '0.7rem', cursor: 'pointer' }}>×</button>
+                    <button aria-label={`Delete ${p.name} preset`} onClick={() => handleDeletePreset(p.id)}
+                      style={{ background: 'none', border: 'none', color: 'var(--c-muted)', padding: '5px 8px 5px 0', fontSize: '0.7rem', cursor: 'pointer' }}><Icon name="close" size={16} /></button>
                   </div>
                 ))}
               </div>
@@ -572,9 +580,7 @@ function PlayerContent() {
           </div>
         )}
 
-        <div style={{ textAlign: 'center', padding: '0.4rem 1rem 0.8rem', fontSize: '0.58rem', color: 'rgba(255,255,255,0.18)', fontFamily: 'Space Mono, monospace' }}>
-          Web Audio API · yt-dlp · Not affiliated with YouTube
-        </div>
+        <Footer />
       </div>
 
       {/* Queue modal */}
@@ -585,33 +591,34 @@ function PlayerContent() {
             style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 49 }} />
 
           {/* Modal */}
-          <div className="slide-up" style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: theme.bg1, border: '1px solid var(--c-border)', borderRadius: '20px 20px 0 0', zIndex: 50, maxHeight: '75vh', display: 'flex', flexDirection: 'column' }}>
+          <div className="slide-up queue-sheet" role="dialog" aria-modal="true" aria-label="Play queue" style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: theme.bg1, border: '1px solid var(--c-border)', borderRadius: '20px 20px 0 0', zIndex: 50, maxHeight: '75vh', display: 'flex', flexDirection: 'column' }}>
 
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 1.25rem 0.75rem', borderBottom: '1px solid var(--c-border)', flexShrink: 0 }}>
-              <span style={{ fontFamily: 'Space Mono, monospace', fontSize: '0.7rem', color: 'var(--c-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: 'var(--c-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                 Queue mein add karo {queue.length > 0 && `· ${queue.length} songs`}
               </span>
-              <button onClick={() => { setShowQueue(false); setQueueUrl('') }}
-                style={{ background: 'none', border: 'none', color: 'var(--c-muted)', cursor: 'pointer', fontSize: '1.2rem', lineHeight: 1 }}>×</button>
+              <button aria-label="Close queue" onClick={() => { setShowQueue(false); setQueueUrl('') }}
+                style={{ background: 'none', border: 'none', color: 'var(--c-muted)', cursor: 'pointer', fontSize: '1.2rem', lineHeight: 1 }}><Icon name="close" size={16} /></button>
             </div>
 
             {/* URL input */}
             <div style={{ padding: '0.85rem 1.25rem', borderBottom: '1px solid var(--c-border)', flexShrink: 0 }}>
               <div style={{ display: 'flex', gap: 8 }}>
                 <input
+                  aria-label="YouTube link for queue"
                   value={queueUrl}
                   onChange={(e) => setQueueUrl(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleAddUrlToQueue()}
                   placeholder="YouTube link yahan paste karo..."
                   autoFocus
-                  style={{ flex: 1, padding: '10px 14px', background: 'rgba(255,255,255,0.07)', border: '1px solid var(--c-border)', borderRadius: 12, color: 'var(--c-text)', fontSize: '0.9rem', fontFamily: 'Outfit, sans-serif', outline: 'none' }}
+                  style={{ flex: 1, padding: '10px 14px', background: 'rgba(255,255,255,0.07)', border: '1px solid var(--c-border)', borderRadius: 12, color: 'var(--c-text)', fontSize: '0.9rem', fontFamily: 'var(--font-body)', outline: 'none' }}
                   onFocus={(e) => { e.target.style.borderColor = theme.primary; e.target.style.boxShadow = `0 0 0 3px ${theme.primary}20` }}
                   onBlur={(e) => { e.target.style.borderColor = 'var(--c-border)'; e.target.style.boxShadow = 'none' }}
                 />
                 <button onClick={handleAddUrlToQueue} disabled={queueAdding}
-                  style={{ background: theme.primary, color: '#1a0b2e', border: 'none', borderRadius: 12, padding: '10px 16px', fontSize: '0.85rem', fontWeight: 700, cursor: queueAdding ? 'not-allowed' : 'pointer', fontFamily: 'Outfit, sans-serif', whiteSpace: 'nowrap', opacity: queueAdding ? 0.7 : 1 }}>
-                  {queueAdding ? '...' : '+ Add'}
+                  style={{ background: theme.primary, color: '#0e0b09', border: 'none', borderRadius: 12, padding: '10px 16px', fontSize: '0.85rem', fontWeight: 700, cursor: queueAdding ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-body)', whiteSpace: 'nowrap', opacity: queueAdding ? 0.7 : 1 }}>
+                  {queueAdding ? <span className="loading-spinner" /> : <><Icon name="plus" size={16} /> Add</>}
                 </button>
               </div>
             </div>
@@ -619,21 +626,21 @@ function PlayerContent() {
             {/* Queue list */}
             <div style={{ overflowY: 'auto', padding: '0.75rem 1.25rem 1.5rem', flex: 1 }}>
               {queue.length === 0 ? (
-                <p style={{ color: 'var(--c-muted)', textAlign: 'center', fontSize: '0.8rem', padding: '1.5rem 0', fontFamily: 'Space Mono, monospace' }}>
-                  Queue khaali hai — upar link paste karo 👆
+                <p style={{ color: 'var(--c-muted)', textAlign: 'center', fontSize: '0.8rem', padding: '1.5rem 0', fontFamily: 'var(--font-mono)' }}>
+                  Queue khaali hai — upar link paste karo
                 </p>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {queue.map((q, i) => (
                     <div key={q.id + i} style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'var(--c-surface)', borderRadius: 10, padding: '9px 12px' }}>
-                      <span style={{ fontFamily: 'Space Mono, monospace', fontSize: '0.62rem', color: 'var(--c-muted)', width: 16, flexShrink: 0, textAlign: 'center' }}>{i + 1}</span>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', color: 'var(--c-muted)', width: 16, flexShrink: 0, textAlign: 'center' }}>{i + 1}</span>
                       {q.thumbnail && <img src={q.thumbnail} alt="" style={{ width: 40, height: 30, borderRadius: 5, objectFit: 'cover', flexShrink: 0 }} />}
                       <div style={{ flex: 1, overflow: 'hidden' }}>
                         <p style={{ fontSize: '0.82rem', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{q.title}</p>
-                        <p style={{ fontSize: '0.68rem', color: 'var(--c-muted)', fontFamily: 'Space Mono, monospace' }}>{q.author}</p>
+                        <p style={{ fontSize: '0.68rem', color: 'var(--c-muted)', fontFamily: 'var(--font-mono)' }}>{q.author}</p>
                       </div>
-                      <button onClick={() => removeFromQueue(i)}
-                        style={{ background: 'none', border: 'none', color: 'var(--c-muted)', cursor: 'pointer', fontSize: '1.1rem', padding: '0 4px', lineHeight: 1 }}>×</button>
+                      <button aria-label={`Remove ${q.title} from queue`} onClick={() => removeFromQueue(i)}
+                        style={{ background: 'none', border: 'none', color: 'var(--c-muted)', cursor: 'pointer', fontSize: '1.1rem', padding: '0 4px', lineHeight: 1 }}><Icon name="close" size={16} /></button>
                     </div>
                   ))}
                 </div>
@@ -644,7 +651,7 @@ function PlayerContent() {
       )}
 
       {/* Toast */}
-      <div style={{ position: 'fixed', bottom: 24, left: '50%', transform: `translateX(-50%) translateY(${toast.show ? 0 : 80}px)`, background: theme.primary, color: '#1a0b2e', padding: '10px 22px', borderRadius: 100, fontSize: '0.85rem', fontWeight: 600, zIndex: 999, transition: 'transform 0.35s cubic-bezier(0.4,0,0.2,1)', whiteSpace: 'nowrap', fontFamily: 'Outfit, sans-serif', pointerEvents: 'none' }}>
+      <div role="status" style={{ visibility: toast.show ? 'visible' : 'hidden', maxWidth: 'calc(100vw - 32px)', position: 'fixed', bottom: 24, left: '50%', transform: `translateX(-50%) translateY(${toast.show ? 0 : 80}px)`, background: theme.primary, color: '#0e0b09', padding: '10px 22px', borderRadius: 100, fontSize: '0.85rem', fontWeight: 600, zIndex: 999, transition: 'transform 0.35s cubic-bezier(0.4,0,0.2,1)', whiteSpace: 'normal', fontFamily: 'var(--font-body)', pointerEvents: 'none' }}>
         {toast.msg}
       </div>
     </main>
@@ -654,7 +661,7 @@ function PlayerContent() {
 export default function PlayPage() {
   return (
     <Suspense fallback={
-      <div style={{ minHeight: '100vh', background: '#0C0A1D', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#A78BFA', fontFamily: 'Space Mono, monospace', fontSize: '0.85rem' }}>
+      <div style={{ minHeight: '100vh', background: '#0e0b09', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#c9a15a', fontFamily: 'var(--font-mono)', fontSize: '0.85rem' }}>
         Loading vibe...
       </div>
     }>

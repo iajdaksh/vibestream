@@ -1,6 +1,9 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import Icon from '@/components/Icon'
+import Brand from '@/components/Brand'
+import Footer from '@/components/Footer'
 import { useRouter } from 'next/navigation'
 import { getCurrentTheme, parseYouTubeId, Theme } from '@/lib/utils'
 import {
@@ -68,35 +71,27 @@ export default function HomePage() {
   if (!theme) return null
 
   return (
-    <main style={{ minHeight: '100vh', background: theme.bg1, position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '2rem 1.25rem 3rem' }}>
+    <main className="home-shell" style={{ minHeight: '100vh', background: theme.bg1, position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '2rem 1.25rem 3rem' }}>
 
-      <div style={{ position: 'absolute', inset: 0, background: theme.gradient, opacity: 0.5, pointerEvents: 'none', zIndex: 0 }} />
+      <div style={{ position: 'absolute', inset: 0, background: theme.gradient, opacity: 0.12, pointerEvents: 'none', zIndex: 0 }} />
 
-      <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 520 }}>
+      <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 640 }}>
 
+        <Brand />
         {/* Logo */}
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <div className="pulse-glow" style={{ width: 68, height: 68, borderRadius: '50%', background: theme.primary, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
-            <svg width="34" height="34" viewBox="0 0 36 36" fill="none">
-              <circle cx="18" cy="18" r="11" stroke="#1a0b2e" strokeWidth="2.5" />
-              <circle cx="18" cy="18" r="4.5" fill="#1a0b2e" />
-              <circle cx="18" cy="18" r="2" fill={theme.primary} />
-            </svg>
-          </div>
-          <h1 style={{ fontFamily: 'Outfit, sans-serif', fontSize: '2.8rem', fontWeight: 900, letterSpacing: '-0.02em', background: `linear-gradient(135deg, #fff 0%, ${theme.primary} 100%)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', lineHeight: 1, marginBottom: '0.4rem' }}>
-            Vibestream
-          </h1>
-          <p style={{ fontFamily: 'Space Mono, monospace', fontSize: '0.65rem', color: 'var(--c-muted)', letterSpacing: '0.15em', textTransform: 'uppercase' }}>
-            {theme.name} — {theme.vibeHint}
-          </p>
-        </div>
+        <header className="home-hero">
+          <p className="eyebrow"><span className="station-dot" /> YOUR OWN FREQUENCY</p>
+          <h1>Find your <em>vibe.</em></h1>
+          <p className="hero-copy">A song for the moment. A mood of your own.</p>
+          <p className="time-theme">{theme.name} / {theme.vibeHint}</p>
+        </header>
 
         {/* Tabs */}
         <div style={{ display: 'flex', background: 'var(--c-surface)', borderRadius: 12, padding: 4, marginBottom: '1rem', border: '1px solid var(--c-border)' }}>
           {(['paste', 'search'] as Tab[]).map((t) => (
             <button key={t} onClick={() => { setTab(t); setError(''); setResults([]) }}
-              style={{ flex: 1, padding: '8px 0', borderRadius: 9, border: 'none', cursor: 'pointer', fontFamily: 'Outfit, sans-serif', fontWeight: 600, fontSize: '0.85rem', transition: 'all 0.2s', background: tab === t ? theme.primary : 'transparent', color: tab === t ? '#1a0b2e' : 'var(--c-muted)' }}>
-              {t === 'paste' ? '🔗 Paste URL' : '🔍 Search'}
+              style={{ flex: 1, padding: '8px 0', borderRadius: 9, border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: '0.85rem', transition: 'all 0.2s', background: tab === t ? theme.primary : 'transparent', color: tab === t ? '#0e0b09' : 'var(--c-muted)' }}>
+              <Icon name={t === 'paste' ? 'link' : 'search'} size={16} /> {t === 'paste' ? 'Paste URL' : 'Search'}
             </button>
           ))}
         </div>
@@ -105,20 +100,20 @@ export default function HomePage() {
         {tab === 'paste' && (
           <div className="fade-in" style={{ marginBottom: '1rem' }}>
             <div style={{ position: 'relative' }}>
-              <input type="text" value={url}
+              <input aria-label="YouTube link" type="text" value={url}
                 onChange={(e) => { setUrl(e.target.value); setError('') }}
                 onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
                 placeholder="Paste YouTube link here..."
-                style={{ width: '100%', padding: '1rem 1.25rem', paddingRight: 135, background: 'rgba(255,255,255,0.07)', border: `1.5px solid ${error ? '#f87171' : 'var(--c-border)'}`, borderRadius: 14, color: 'var(--c-text)', fontSize: '0.95rem', fontFamily: 'Outfit, sans-serif', outline: 'none' }}
+                style={{ width: '100%', padding: '1rem 1.25rem', paddingRight: 135, background: 'rgba(255,255,255,0.07)', border: `1.5px solid ${error ? '#f87171' : 'var(--c-border)'}`, borderRadius: 14, color: 'var(--c-text)', fontSize: '0.95rem', fontFamily: 'var(--font-body)', outline: 'none' }}
                 onFocus={(e) => { e.target.style.borderColor = theme.primary; e.target.style.boxShadow = `0 0 0 4px ${theme.primary}20` }}
                 onBlur={(e) => { e.target.style.borderColor = 'var(--c-border)'; e.target.style.boxShadow = 'none' }}
               />
               <button onClick={handleSubmit}
-                style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: theme.primary, color: '#1a0b2e', border: 'none', borderRadius: 9, padding: '0.55rem 1.1rem', fontSize: '0.85rem', fontWeight: 700, fontFamily: 'Outfit, sans-serif', cursor: 'pointer' }}>
-                Let's Vibe ▶
+                style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: theme.primary, color: '#0e0b09', border: 'none', borderRadius: 9, padding: '0.55rem 1.1rem', fontSize: '0.85rem', fontWeight: 700, fontFamily: 'var(--font-body)', cursor: 'pointer' }}>
+                Let's Vibe <Icon name="play" size={14} />
               </button>
             </div>
-            {error && <p style={{ color: '#f87171', fontSize: '0.78rem', marginTop: '0.5rem', fontFamily: 'Space Mono, monospace' }}>⚠ {error}</p>}
+            {error && <p style={{ color: '#f87171', fontSize: '0.78rem', marginTop: '0.5rem', fontFamily: 'var(--font-mono)' }}><Icon name="alert" size={15} /> {error}</p>}
           </div>
         )}
 
@@ -126,11 +121,11 @@ export default function HomePage() {
         {tab === 'search' && (
           <div className="fade-in" style={{ marginBottom: '1rem' }}>
             <div style={{ position: 'relative', marginBottom: '0.75rem' }}>
-              <input type="text" value={query}
+              <input aria-label="Search songs or artists" type="text" value={query}
                 onChange={(e) => handleQueryChange(e.target.value)}
                 placeholder="Write a Song Name or An Artist.."
                 autoFocus
-                style={{ width: '100%', padding: '1rem 1.25rem', background: 'rgba(255,255,255,0.07)', border: '1.5px solid var(--c-border)', borderRadius: 14, color: 'var(--c-text)', fontSize: '0.95rem', fontFamily: 'Outfit, sans-serif', outline: 'none' }}
+                style={{ width: '100%', padding: '1rem 1.25rem', background: 'rgba(255,255,255,0.07)', border: '1.5px solid var(--c-border)', borderRadius: 14, color: 'var(--c-text)', fontSize: '0.95rem', fontFamily: 'var(--font-body)', outline: 'none' }}
                 onFocus={(e) => { e.target.style.borderColor = theme.primary; e.target.style.boxShadow = `0 0 0 4px ${theme.primary}20` }}
                 onBlur={(e) => { e.target.style.borderColor = 'var(--c-border)'; e.target.style.boxShadow = 'none' }}
               />
@@ -149,16 +144,16 @@ export default function HomePage() {
                     <img src={r.thumbnail} alt="" style={{ width: 52, height: 38, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />
                     <div style={{ overflow: 'hidden', flex: 1 }}>
                       <p style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--c-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.title}</p>
-                      <p style={{ fontSize: '0.72rem', color: 'var(--c-muted)', fontFamily: 'Space Mono, monospace' }}>{r.author} · {Math.floor(r.duration / 60)}:{String(r.duration % 60).padStart(2, '0')}</p>
+                      <p style={{ fontSize: '0.72rem', color: 'var(--c-muted)', fontFamily: 'var(--font-mono)' }}>{r.author} · {Math.floor(r.duration / 60)}:{String(r.duration % 60).padStart(2, '0')}</p>
                     </div>
-                    <span style={{ color: theme.primary, fontSize: '1.1rem', flexShrink: 0 }}>▶</span>
+                    <span style={{ color: theme.primary, fontSize: '1.1rem', flexShrink: 0 }}><Icon name="play" /></span>
                   </button>
                 ))}
               </div>
             )}
 
             {query.length >= 2 && !searching && results.length === 0 && (
-              <p style={{ textAlign: 'center', color: 'var(--c-muted)', fontSize: '0.8rem', padding: '1.5rem', fontFamily: 'Space Mono, monospace' }}>Can't Search 😕</p>
+              <p style={{ textAlign: 'center', color: 'var(--c-muted)', fontSize: '0.8rem', padding: '1.5rem', fontFamily: 'var(--font-mono)' }}><Icon name="search" /> No tracks found. Try another search.</p>
             )}
           </div>
         )}
@@ -166,11 +161,11 @@ export default function HomePage() {
         {/* Bass Boost */}
         <div style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)', borderRadius: 14, padding: '0.85rem 1.1rem', marginBottom: '1.25rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: '0.5rem' }}>
-            <span>🔊</span>
-            <span style={{ fontSize: '0.72rem', fontFamily: 'Space Mono, monospace', color: 'var(--c-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Global Bass Boost</span>
-            <span style={{ marginLeft: 'auto', fontSize: '0.72rem', fontFamily: 'Space Mono, monospace', color: theme.primary }}>{bass >= 0 ? '+' : ''}{bass} dB</span>
+            <Icon name="volume" />
+            <span style={{ fontSize: '0.72rem', fontFamily: 'var(--font-mono)', color: 'var(--c-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Global Bass Boost</span>
+            <span style={{ marginLeft: 'auto', fontSize: '0.72rem', fontFamily: 'var(--font-mono)', color: theme.primary }}>{bass >= 0 ? '+' : ''}{bass} dB</span>
           </div>
-          <input type="range" min={-6} max={12} step={1} value={bass}
+          <input aria-label="Global bass boost" type="range" min={-6} max={12} step={1} value={bass}
             onChange={(e) => handleBass(Number(e.target.value))}
             style={{ width: '100%', accentColor: theme.primary }} />
         </div>
@@ -179,9 +174,9 @@ export default function HomePage() {
         {history.length > 0 && (
           <div className="fade-in">
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.6rem' }}>
-              <p style={{ fontFamily: 'Space Mono, monospace', fontSize: '0.62rem', color: 'var(--c-muted)', textTransform: 'uppercase', letterSpacing: '0.12em' }}>Recently Played</p>
+              <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', color: 'var(--c-muted)', textTransform: 'uppercase', letterSpacing: '0.12em' }}>Recently Played</p>
               <button onClick={() => { clearHistory(); setHistory([]) }}
-                style={{ background: 'none', border: 'none', color: 'var(--c-muted)', fontSize: '0.65rem', cursor: 'pointer', fontFamily: 'Space Mono, monospace' }}>Clear</button>
+                style={{ background: 'none', border: 'none', color: 'var(--c-muted)', fontSize: '0.65rem', cursor: 'pointer', fontFamily: 'var(--font-mono)' }}>Clear</button>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {history.slice(0, 6).map((h) => (
@@ -195,18 +190,16 @@ export default function HomePage() {
                   }
                   <div style={{ overflow: 'hidden', flex: 1 }}>
                     <p style={{ fontSize: '0.83rem', fontWeight: 600, color: 'var(--c-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{h.title}</p>
-                    <p style={{ fontSize: '0.7rem', color: 'var(--c-muted)', fontFamily: 'Space Mono, monospace' }}>{h.author}</p>
+                    <p style={{ fontSize: '0.7rem', color: 'var(--c-muted)', fontFamily: 'var(--font-mono)' }}>{h.author}</p>
                   </div>
-                  <span style={{ fontSize: '0.58rem', color: 'var(--c-muted)', fontFamily: 'Space Mono, monospace', flexShrink: 0, background: 'var(--c-border)', borderRadius: 6, padding: '2px 6px' }}>{h.vibe}</span>
+                  <span style={{ fontSize: '0.58rem', color: 'var(--c-muted)', fontFamily: 'var(--font-mono)', flexShrink: 0, background: 'var(--c-border)', borderRadius: 6, padding: '2px 6px' }}>{h.vibe}</span>
                 </button>
               ))}
             </div>
           </div>
         )}
 
-        <p style={{ textAlign: 'center', fontSize: '0.58rem', color: 'rgba(255,255,255,0.15)', fontFamily: 'Space Mono, monospace', marginTop: '2rem' }}>
-          Uses YouTube API Services · Not affiliated with YouTube/Google
-        </p>
+        <Footer />
       </div>
     </main>
   )
