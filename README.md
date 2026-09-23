@@ -124,6 +124,8 @@ vibestream/
 
 ## Deployment
 
+See [current Render setup and YouTube bot-challenge troubleshooting](RENDER.md). It supersedes the legacy deployment instructions below; use Node.js 22+ and the build-time binary installer.
+
 > `yt-dlp.exe` must be present on the server. On Linux/Mac, replace it with the appropriate `yt-dlp` binary and update the path in the API route.
 
 ```bash

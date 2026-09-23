@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { ensureYtDlp } from '@/lib/ytdlp-path'
-import YTDlpWrap from 'yt-dlp-wrap-extended'
+import { runYouTube, YouTubeError } from '@/lib/youtube-server'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -20,15 +19,12 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const binPath = await ensureYtDlp()
-    const ytDlp = new YTDlpWrap(binPath)
-    
-    const out = await ytDlp.execPromise([
+    const out = await runYouTube([
       `ytsearch5:${q}`,
       '--dump-json',
       '--flat-playlist',
       '--no-warnings'
-    ])
+    ], req.signal)
     
     const results = out
       .trim()
@@ -51,7 +47,8 @@ export async function GET(req: NextRequest) {
       .filter(Boolean)
 
     return NextResponse.json({ results })
-  } catch (err: any) {
-    return NextResponse.json({ results: [], error: err?.message }, { status: 500 })
+  } catch (err) {
+    const e = err instanceof YouTubeError ? err : new YouTubeError('YOUTUBE_SEARCH_FAILED', 'Search is unavailable.')
+    return NextResponse.json({ results: [], error: e.message, code: e.code }, { status: e.status })
   }
 }

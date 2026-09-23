@@ -4,10 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "node scripts/setup-yt-dlp.mjs && next build",
+    "build": "node scripts/setup-yt-dlp.mjs --refresh && next build",
     "start": "next start",
     "postinstall": "node scripts/setup-yt-dlp.mjs"
   },
+  "engines": { "node": ">=22.0.0" },
   "dependencies": {
     "@distube/ytdl-core": "^4.16.12",
     "next": "15.5.15",

@@ -22,3 +22,7 @@ tmp_*.js
 yt-dlp
 yt-dlp.exe
 yt-dlp_macos
+yt-dlp.download
+yt-dlp.exe.download
+yt-dlp.exe.download.exe
+*cookies*.txt

@@ -167,13 +167,18 @@ function PlayerContent() {
       }).catch((err) => {
         console.error("Meta fetch error:", err)
         showToast("⚠ " + err.message)
-        setAudioError(true)
+        setTrackTitle('YouTube Track')
       })
   }, [videoId])
 
   // ── audio element ───────────────────────────────────────────────────────────
   useEffect(() => {
     if (!videoId) return
+    setLoading(true)
+    setAudioError(false)
+    setIsPlaying(false)
+    setCurrentTime(0)
+    setDuration(0)
     const audio = new Audio()
     audio.crossOrigin = 'anonymous'
     audio.src = `/api/audio?v=${videoId}`
@@ -181,9 +186,8 @@ function PlayerContent() {
     audioRef.current = audio
     engineRef.current = new VibeAudioEngine()
 
-    let errorTimer: ReturnType<typeof setTimeout>
-    const onCanPlay = () => { setLoading(false); clearTimeout(errorTimer) }
-    const onError = () => { errorTimer = setTimeout(() => { setLoading(false); setAudioError(true) }, 12000) }
+    const onCanPlay = () => { setLoading(false) }
+    const onError = () => { setLoading(false); setAudioError(true) }
     const onTimeUpdate = () => setCurrentTime(audio.currentTime)
     const onDurationChange = () => { if (audio.duration) setDuration(audio.duration) }
     const onEnded = () => { setIsPlaying(false); stopProgress(); playNext() }
@@ -210,7 +214,6 @@ function PlayerContent() {
       audio.src = ''
       engineRef.current?.destroy()
       engineReady.current = false
-      clearTimeout(errorTimer)
       if (progressTimer.current) clearInterval(progressTimer.current)
     }
   }, [videoId])
