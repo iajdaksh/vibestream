@@ -1,6 +1,9 @@
 import type { SVGProps } from 'react'
 
 const paths = {
+  up: 'm6 15 6-6 6 6',
+  down: 'm6 9 6 6 6-6',
+  save: 'M4 3h13l4 4v14H3V3ZM7 3v6h10V3M7 21v-8h10v8',
   heart: 'M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z',
   play: 'm9 5 11 7-11 7Z',
   pause: 'M8 5v14M16 5v14',

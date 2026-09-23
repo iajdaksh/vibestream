@@ -5,7 +5,8 @@ import Icon from '@/components/Icon'
 import Brand from '@/components/Brand'
 import Footer from '@/components/Footer'
 import { useRouter } from 'next/navigation'
-import { getCurrentTheme, parseYouTubeId, Theme } from '@/lib/utils'
+import { parseYouTubeId } from '@/lib/utils'
+import { useTimeTheme } from '@/lib/useTimeTheme'
 import {
   getHistory, clearHistory, HistoryItem,
   getGlobalBass, setGlobalBass,
@@ -17,7 +18,7 @@ type Tab = 'paste' | 'search'
 export default function HomePage() {
   const router = useRouter()
   const [url, setUrl] = useState('')
-  const [theme, setTheme] = useState<Theme | null>(null)
+  const theme = useTimeTheme()
   const [error, setError] = useState('')
   const [tab, setTab] = useState<Tab>('paste')
   const [query, setQuery] = useState('')
@@ -28,12 +29,13 @@ export default function HomePage() {
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
-    const t = getCurrentTheme()
-    setTheme(t)
-    document.documentElement.style.setProperty('--c-primary', t.primary)
     setHistory(getHistory())
     setBassState(getGlobalBass())
   }, [])
+
+  useEffect(() => {
+    if (theme) document.documentElement.style.setProperty('--c-primary', theme.primary)
+  }, [theme])
 
   function goPlay(id: string) {
     router.push(`/play?v=${id}&bass=${bass}`)
@@ -71,13 +73,14 @@ export default function HomePage() {
   if (!theme) return null
 
   return (
-    <main className="home-shell" style={{ minHeight: '100vh', background: theme.bg1, position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '2rem 1.25rem 3rem' }}>
+    <main className="home-shell" style={{ background: theme.bg1, position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
 
       <div style={{ position: 'absolute', inset: 0, background: theme.gradient, opacity: 0.12, pointerEvents: 'none', zIndex: 0 }} />
 
-      <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 640 }}>
+      <div className="home-content" style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 640 }}>
 
         <Brand />
+        <div className="home-workspace">
         {/* Logo */}
         <header className="home-hero">
           <p className="eyebrow"><span className="station-dot" /> YOUR OWN FREQUENCY</p>
@@ -100,13 +103,11 @@ export default function HomePage() {
         {tab === 'paste' && (
           <div className="fade-in" style={{ marginBottom: '1rem' }}>
             <div style={{ position: 'relative' }}>
-              <input aria-label="YouTube link" type="text" value={url}
+              <input className="track-input" aria-label="YouTube link" aria-invalid={!!error} type="text" value={url}
                 onChange={(e) => { setUrl(e.target.value); setError('') }}
                 onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
                 placeholder="Paste YouTube link here..."
                 style={{ width: '100%', padding: '1rem 1.25rem', paddingRight: 135, background: 'rgba(255,255,255,0.07)', border: `1.5px solid ${error ? '#f87171' : 'var(--c-border)'}`, borderRadius: 14, color: 'var(--c-text)', fontSize: '0.95rem', fontFamily: 'var(--font-body)', outline: 'none' }}
-                onFocus={(e) => { e.target.style.borderColor = theme.primary; e.target.style.boxShadow = `0 0 0 4px ${theme.primary}20` }}
-                onBlur={(e) => { e.target.style.borderColor = 'var(--c-border)'; e.target.style.boxShadow = 'none' }}
               />
               <button onClick={handleSubmit}
                 style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: theme.primary, color: '#0e0b09', border: 'none', borderRadius: 9, padding: '0.55rem 1.1rem', fontSize: '0.85rem', fontWeight: 700, fontFamily: 'var(--font-body)', cursor: 'pointer' }}>
@@ -121,13 +122,11 @@ export default function HomePage() {
         {tab === 'search' && (
           <div className="fade-in" style={{ marginBottom: '1rem' }}>
             <div style={{ position: 'relative', marginBottom: '0.75rem' }}>
-              <input aria-label="Search songs or artists" type="text" value={query}
+              <input className="track-input" aria-label="Search songs or artists" type="text" value={query}
                 onChange={(e) => handleQueryChange(e.target.value)}
                 placeholder="Write a Song Name or An Artist.."
                 autoFocus
                 style={{ width: '100%', padding: '1rem 1.25rem', background: 'rgba(255,255,255,0.07)', border: '1.5px solid var(--c-border)', borderRadius: 14, color: 'var(--c-text)', fontSize: '0.95rem', fontFamily: 'var(--font-body)', outline: 'none' }}
-                onFocus={(e) => { e.target.style.borderColor = theme.primary; e.target.style.boxShadow = `0 0 0 4px ${theme.primary}20` }}
-                onBlur={(e) => { e.target.style.borderColor = 'var(--c-border)'; e.target.style.boxShadow = 'none' }}
               />
               {searching && (
                 <div style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', width: 16, height: 16, border: `2px solid ${theme.primary}`, borderTopColor: 'transparent', borderRadius: '50%', animation: 'vinyl-spin 0.6s linear infinite' }} />
@@ -158,18 +157,6 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Bass Boost */}
-        <div style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)', borderRadius: 14, padding: '0.85rem 1.1rem', marginBottom: '1.25rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: '0.5rem' }}>
-            <Icon name="volume" />
-            <span style={{ fontSize: '0.72rem', fontFamily: 'var(--font-mono)', color: 'var(--c-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Global Bass Boost</span>
-            <span style={{ marginLeft: 'auto', fontSize: '0.72rem', fontFamily: 'var(--font-mono)', color: theme.primary }}>{bass >= 0 ? '+' : ''}{bass} dB</span>
-          </div>
-          <input aria-label="Global bass boost" type="range" min={-6} max={12} step={1} value={bass}
-            onChange={(e) => handleBass(Number(e.target.value))}
-            style={{ width: '100%', accentColor: theme.primary }} />
-        </div>
-
         {/* Recently Played */}
         {history.length > 0 && (
           <div className="fade-in">
@@ -199,6 +186,18 @@ export default function HomePage() {
           </div>
         )}
 
+        </div>
+        {/* Bass Boost */}
+        <div style={{ flexShrink: 0, padding: '12px 4px 8px', background: 'transparent', border: 'none' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: '0.5rem' }}>
+            <Icon name="volume" />
+            <span style={{ fontSize: '0.72rem', fontFamily: 'var(--font-mono)', color: 'var(--c-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Global Bass Boost</span>
+            <span style={{ marginLeft: 'auto', fontSize: '0.72rem', fontFamily: 'var(--font-mono)', color: theme.primary }}>{bass >= 0 ? '+' : ''}{bass} dB</span>
+          </div>
+          <input aria-label="Global bass boost" type="range" min={-6} max={12} step={1} value={bass}
+            onChange={(e) => handleBass(Number(e.target.value))}
+            style={{ width: '100%', accentColor: theme.primary }} />
+        </div>
         <Footer />
       </div>
     </main>

@@ -63,8 +63,8 @@ export const themes: Record<string, Theme> = {
   },
 }
 
-function getTimeTheme(): Theme {
-  const h = new Date().getHours()
+function getTimeTheme(date: Date): Theme {
+  const h = date.getHours()
   if (h >= 5 && h < 9) return themes.dawn
   if (h >= 9 && h < 12) return themes.morning
   if (h >= 12 && h < 17) return themes.afternoon
@@ -186,7 +186,7 @@ export const vibeConfigs: Record<string, VibeConfig> = {
   },
 }
 
-// PlayRadio brand stays warm and neutral; time-of-day ambiance is retained.
-export function getCurrentTheme(): Theme {
-  return { ...getTimeTheme(), primary: '#c9a15a', bg1: '#0e0b09', bg2: '#16110d' }
+// Keep the PlayRadio surfaces, with an accent matching the listener's local time.
+export function getCurrentTheme(date = new Date()): Theme {
+  return { ...getTimeTheme(date), bg1: '#0e0b09', bg2: '#16110d' }
 }
