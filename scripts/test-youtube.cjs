@@ -93,6 +93,24 @@ test('extraction failure returns error code without starting stream fetch', asyn
   assert.equal(result.status, 503)
   assert.equal((await result.json()).code, 'YOUTUBE_AUTH_REQUIRED')
 })
+
+test('browser open-ended and large ranges use bounded chunks without losing offsets', async () => {
+  for (const [requested, expected] of [
+    ['bytes=0-', 'bytes=0-1048575'],
+    ['bytes=1048576-', 'bytes=1048576-2097151'],
+    ['bytes=100-9000000', 'bytes=100-1048675'],
+    ['bytes=100-200', 'bytes=100-200'],
+    ['bytes=-128', 'bytes=-128'],
+  ]) {
+    const get = audio(async () => JSON.stringify({ url: 'https://media.example/audio' }), async (_, options) => {
+      assert.equal(options.headers.get('range'), expected)
+      return new Response('abc', { status: 206, headers: { 'Content-Range': 'bytes 0-2/9000000' } })
+    })
+    const result = await get(request(undefined, requested))
+    assert.equal(result.status, 206)
+    assert.equal(result.headers.get('content-range'), 'bytes 0-2/9000000')
+  }
+})
 test('upstream 403 is not returned as playable audio', async () => {
   const get = audio(async () => JSON.stringify({ url: 'https://media.example/audio' }), async () => new Response('Forbidden', { status: 403 }))
   const result = await get(request())

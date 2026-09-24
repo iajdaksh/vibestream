@@ -80,6 +80,14 @@ export default function HomePage() {
       <div className="home-content" style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 640 }}>
 
         <Brand />
+        <nav className="home-navigation" aria-label="PlayRadio links">
+          <a href="https://playradio.buzz" aria-label="PlayRadio home" title="PlayRadio home">
+            <Icon name="home" size={20} />
+          </a>
+          <a href="https://playradio.buzz/support" aria-label="Support us" title="Support us">
+            <Icon name="support" size={20} />
+          </a>
+        </nav>
         <div className="home-workspace">
         {/* Logo */}
         <header className="home-hero">

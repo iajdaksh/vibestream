@@ -16,84 +16,7 @@ import EQVisualizer from '@/components/EQVisualizer'
 import Vinyl from '@/components/Vinyl'
 import VibeBackground from '@/components/VibeBackground'
 
-// ── Vibe card generator ───────────────────────────────────────────────────────
-function generateVibeCard(
-  title: string, author: string, vibe: string,
-  primaryColor: string, bg: string,
-): string {
-  const canvas = document.createElement('canvas')
-  canvas.width = 800; canvas.height = 800
-  const ctx = canvas.getContext('2d')!
-
-  // Background
-  const grad = ctx.createRadialGradient(400, 300, 0, 400, 400, 600)
-  grad.addColorStop(0, bg)
-  grad.addColorStop(1, '#000')
-  ctx.fillStyle = grad
-  ctx.fillRect(0, 0, 800, 800)
-
-  // Glow circle
-  const glow = ctx.createRadialGradient(400, 380, 0, 400, 380, 280)
-  glow.addColorStop(0, primaryColor + '40')
-  glow.addColorStop(1, 'transparent')
-  ctx.fillStyle = glow
-  ctx.fillRect(0, 0, 800, 800)
-
-  // Vinyl record
-  ctx.save()
-  ctx.translate(400, 360)
-  ctx.beginPath(); ctx.arc(0, 0, 200, 0, Math.PI * 2)
-  ctx.fillStyle = '#111'; ctx.fill()
-  for (const r of [170, 155, 140, 125, 110, 95]) {
-    ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2)
-    ctx.strokeStyle = 'rgba(255,255,255,0.05)'; ctx.lineWidth = 2; ctx.stroke()
-  }
-  ctx.beginPath(); ctx.arc(0, 0, 65, 0, Math.PI * 2)
-  ctx.fillStyle = '#211910'; ctx.fill()
-  ctx.beginPath(); ctx.arc(0, 0, 64, 0, Math.PI * 2)
-  ctx.strokeStyle = primaryColor + '60'; ctx.lineWidth = 2; ctx.stroke()
-  ctx.beginPath(); ctx.arc(0, 0, 8, 0, Math.PI * 2)
-  ctx.fillStyle = '#000'; ctx.fill()
-  ctx.restore()
-
-  // Title
-  ctx.font = 'bold 32px Georgia, serif'
-  ctx.fillStyle = '#fff'
-  ctx.textAlign = 'center'
-  const words = title.split(' ')
-  let line = ''; const lines: string[] = []; const maxW = 680
-  for (const w of words) {
-    const test = line ? line + ' ' + w : w
-    if (ctx.measureText(test).width > maxW && line) { lines.push(line); line = w }
-    else line = test
-  }
-  lines.push(line)
-  const titleY = 610
-  lines.slice(0, 2).forEach((l, i) => ctx.fillText(l, 400, titleY + i * 40))
-
-  // Author
-  ctx.font = '20px sans-serif'
-  ctx.fillStyle = primaryColor + 'CC'
-  ctx.fillText(author, 400, titleY + Math.min(lines.length, 2) * 40 + 28)
-
-  // Vibe badge
-  ctx.font = 'bold 16px sans-serif'
-  ctx.fillStyle = '#0e0b09'
-  const badgeText = vibe.toUpperCase() + ' MODE'
-  const bw = ctx.measureText(badgeText).width + 32
-  const bx = 400 - bw / 2; const by = titleY + Math.min(lines.length, 2) * 40 + 68
-  ctx.fillStyle = primaryColor
-  ctx.beginPath(); ctx.roundRect(bx, by, bw, 30, 15); ctx.fill()
-  ctx.fillStyle = '#0e0b09'
-  ctx.fillText(badgeText, 400, by + 20)
-
-  // Branding
-  ctx.font = 'bold 20px sans-serif'
-  ctx.fillStyle = 'rgba(255,255,255,0.35)'
-  ctx.fillText('VIBE / PLAYRADIO.BUZZ', 400, 764)
-
-  return canvas.toDataURL('image/png')
-}
+import { generateVibeCard } from '@/lib/vibeCard'
 
 // ── Player ────────────────────────────────────────────────────────────────────
 function PlayerContent() {
@@ -329,14 +252,14 @@ function PlayerContent() {
     const p = savePreset({ name: presetName.trim(), speed: customSpeed, reverb: customReverb, lowpass: customLowpass, bass: customBass })
     setPresets(getPresets())
     setPresetName('')
-    showToast(`"${p.name}" save ho gaya!`)
+    showToast(`"${p.name}" saved!`)
   }
   function handleLoadPreset(p: VibePreset) {
     setCustomSpeed(p.speed); setCustomReverb(p.reverb)
     setCustomLowpass(p.lowpass); setCustomBass(p.bass)
     engineRef.current?.updateCustom({ speed: p.speed, reverb: p.reverb, lowpass: p.lowpass, bass: p.bass + globalBassRef.current })
     if (audioRef.current) audioRef.current.playbackRate = p.speed / 100
-    showToast(`"${p.name}" load ho gaya!`)
+    showToast(`"${p.name}" loaded!`)
   }
   function handleDeletePreset(id: string) {
     deletePreset(id); setPresets(getPresets())
@@ -352,40 +275,44 @@ function PlayerContent() {
   }
   function addToQueue(item: QueueItem) {
     const q = [...queue, item]; setQueue(q); saveQueue(q)
-    showToast(`Queue mein add ho gaya!`)
+    showToast('Added to queue!')
   }
   function removeFromQueue(idx: number) {
     const q = queue.filter((_, i) => i !== idx); setQueue(q); saveQueue(q)
   }
 
   // ── vibe card ──────────────────────────────────────────────────────────────
-  function handleShareCard() {
+  async function handleShareCard() {
     if (!theme) return
-    const dataUrl = generateVibeCard(trackTitle || 'Vibe by PlayRadio', trackAuthor, vibe, theme.primary, theme.bg1)
-    const a = document.createElement('a')
-    a.href = dataUrl; a.download = 'vibecard.png'; a.click()
-    showToast('Vibe card download ho gaya!')
+    try {
+      const dataUrl = await generateVibeCard(trackTitle || 'Vibe Station', trackAuthor, vibe, theme.primary, theme.bg1)
+      const a = document.createElement('a')
+      a.href = dataUrl; a.download = 'playradio-vibe-card.png'; a.click()
+      showToast('Vibe card downloaded!')
+    } catch {
+      showToast('Could not create vibe card. Please try again.')
+    }
   }
 
   // ── share link ──────────────────────────────────────────────────────────────
   function shareLink() {
     const url = `${window.location.origin}/play?v=${videoId}&vibe=${vibe}&t=${Math.floor(currentTime)}`
-    navigator.clipboard.writeText(url).then(() => showToast('Link copy ho gaya!'))
+    navigator.clipboard.writeText(url).then(() => showToast('Link copied!'))
       .catch(() => showToast('Copy failed'))
   }
 
   // ── queue add by URL ──────────────────────────────────────────────────────
   async function handleAddUrlToQueue() {
     const id = parseYouTubeId(queueUrl.trim())
-    if (!id) { showToast('Valid YouTube link dalo!'); return }
+    if (!id) { showToast('Enter a valid YouTube link.'); return }
     setQueueAdding(true)
     try {
       const res = await fetch(`/api/meta?v=${id}`)
       const d = await res.json()
-      if (d.error) { showToast('Song info nahi mila'); return }
+      if (d.error) { showToast('Could not load track details.'); return }
       addToQueue({ id, title: d.title, author: d.author, thumbnail: d.thumbnail })
       setQueueUrl('')
-    } catch { showToast('Error aayi, try again') }
+    } catch { showToast('Something went wrong. Please try again.'); }
     finally { setQueueAdding(false) }
   }
 
@@ -416,19 +343,12 @@ function PlayerContent() {
             style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)', borderRadius: 10, color: 'var(--c-text)', padding: '8px 14px', fontSize: '0.82rem', fontFamily: 'var(--font-body)', cursor: 'pointer' }}>
             <Icon name="back" size={18} />
           </button>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: 'var(--c-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-            Now Playing
+          <span role="status" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: audioError ? '#f87171' : 'var(--c-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+            {audioError ? <><Icon name="alert" size={14} /> Can't Load Audio</> : isPlaying && !loading ? 'Now Playing' : ''}
           </span>
-          <div style={{ display: 'flex', gap: 6 }}>
-            <button aria-expanded={showQueue} title="Open queue" aria-label="Open queue" onClick={() => setShowQueue(q => !q)}
-              style={{ background: showQueue ? theme.primary : 'var(--c-surface)', border: `1px solid ${showQueue ? theme.primary : 'var(--c-border)'}`, borderRadius: 10, color: showQueue ? '#0e0b09' : 'var(--c-text)', padding: '8px 12px', fontSize: '0.82rem', fontFamily: 'var(--font-body)', cursor: 'pointer' }}>
-              <Icon name="queue" />
-            </button>
-            <button title="Copy track link" aria-label="Copy track link" onClick={shareLink}
-              style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)', borderRadius: 10, color: 'var(--c-text)', padding: '8px 12px', fontSize: '0.82rem', fontFamily: 'var(--font-body)', cursor: 'pointer' }}>
-              <Icon name="link" />
-            </button>
-          </div>
+          <a className="player-support" href="https://playradio.buzz/support" aria-label="Support us" title="Support us">
+            <Icon name="support" size={20} />
+          </a>
         </div>
 
         {/* Vinyl + info */}
@@ -457,17 +377,17 @@ function PlayerContent() {
                 <div className="skeleton" style={{ height: 20, width: '80%', margin: '0 auto 8px' }} />
                 <div className="skeleton" style={{ height: 14, width: '50%', margin: '0 auto' }} />
               </>
-            ) : audioError ? (
-              <p style={{ color: '#f87171', fontSize: '0.9rem' }}><Icon name="alert" /> Can't Load Audio</p>
-            ) : (
+            ) : !audioError ? (
               <>
                 <h2 style={{ fontFamily: 'var(--font-body)', fontSize: '1.05rem', fontWeight: 700, lineHeight: 1.3, marginBottom: '0.25rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {trackTitle || 'Loading...'}
                 </h2>
                 {trackAuthor && <p style={{ fontSize: '0.82rem', color: 'var(--c-muted)' }}>{trackAuthor}</p>}
               </>
-            )}
+            ) : null}
           </div>
+
+        </div>
 
           {/* EQ Visualizer */}
           <div className="player-eq" style={{ marginBottom: '0.75rem' }}>
@@ -504,31 +424,6 @@ function PlayerContent() {
                 style={{ background: 'none', border: 'none', color: theme.primary, fontSize: '1.1rem', cursor: 'pointer' }}><Icon name="next" size={22} /></button>
             )}
           </div>
-
-          {/* Action buttons */}
-          <div className="player-actions" style={{ display: 'flex', gap: 8, marginBottom: '0.75rem' }}>
-            <button title="Download vibe card" aria-label="Download vibe card" onClick={handleShareCard}
-              style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)', borderRadius: 10, color: 'var(--c-muted)', padding: '7px 14px', fontSize: '0.78rem', cursor: 'pointer', fontFamily: 'var(--font-body)' }}>
-              <Icon name="card" size={19} />
-            </button>
-            <button title="Loop track" aria-label="Loop track" aria-pressed={loop} onClick={() => { setLoop(l => !l); showToast(loop ? 'Loop off' : 'Loop on') }}
-              style={{ background: loop ? `${theme.primary}22` : 'var(--c-surface)', border: `1px solid ${loop ? theme.primary : 'var(--c-border)'}`, borderRadius: 10, color: loop ? theme.primary : 'var(--c-muted)', padding: '7px 14px', fontSize: '0.78rem', cursor: 'pointer', fontFamily: 'var(--font-body)', transition: 'all 0.2s' }}>
-              <Icon name="repeat" size={19} />
-            </button>
-          </div>
-        </div>
-
-        {/* Vibe selector */}
-        <div id="vibe-options" className="vibe-selector" hidden={!showVibes} role="region" aria-label="Choose vibe" style={{ padding: '0 1.25rem 0.5rem' }}>
-          <div className="vibe-grid">
-            {vibeList.map((v) => (
-              <button aria-label={v.label} title={v.label} aria-pressed={vibe === v.id} key={v.id} onClick={() => handleVibeChange(v.id as VibeId)}
-                style={{ flexShrink: 0, background: vibe === v.id ? theme.primary : 'var(--c-surface)', border: `1.5px solid ${vibe === v.id ? theme.primary : 'var(--c-border)'}`, borderRadius: 100, padding: '7px 16px', fontSize: '0.8rem', fontWeight: 600, color: vibe === v.id ? '#0e0b09' : 'var(--c-muted)', cursor: 'pointer', fontFamily: 'var(--font-body)', whiteSpace: 'nowrap', transition: 'all 0.2s', boxShadow: vibe === v.id ? `0 0 18px ${theme.primary}50` : 'none' }}>
-                <Icon name={v.icon} size={20} />
-              </button>
-            ))}
-          </div>
-        </div>
 
         {/* Custom panel */}
         {showCustom && (
@@ -580,54 +475,31 @@ function PlayerContent() {
           </div>
         )}
 
-        <Footer separatorControl={
-          <button
-            aria-label={showVibes ? 'Hide vibe options' : 'Choose vibe'}
-            title={showVibes ? 'Hide vibe options' : 'Choose vibe'}
-            aria-expanded={showVibes}
-            aria-controls="vibe-options"
-            onClick={() => {
-              setShowVibes(open => !open)
-              if (showVibes) setShowCustom(false)
-            }}
-          >
-            <Icon name={showVibes ? 'down' : 'up'} size={22} />
-          </button>
-        } />
-      </div>
-
-      {/* Queue modal */}
-      {showQueue && (
-        <>
-          {/* Backdrop */}
-          <div onClick={() => { setShowQueue(false); setQueueUrl('') }}
-            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 49 }} />
-
-          {/* Modal */}
-          <div className="slide-up queue-sheet" role="dialog" aria-modal="true" title="Play queue" aria-label="Play queue" style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: theme.bg1, border: '1px solid var(--c-border)', borderRadius: '20px 20px 0 0', zIndex: 50, maxHeight: '75vh', display: 'flex', flexDirection: 'column' }}>
+        <Footer popup={
+          <>
+          {showQueue && (
+            <div id="play-queue" className="queue-popup" role="region" aria-label="Play queue" onKeyDown={(e) => { if (e.key === 'Escape') { setShowQueue(false); setQueueUrl(''); } }}>
 
             {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 1.25rem 0.75rem', borderBottom: '1px solid var(--c-border)', flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px 0', flexShrink: 0 }}>
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: 'var(--c-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                Queue mein add karo {queue.length > 0 && `· ${queue.length} songs`}
+                Queue {queue.length > 0 && `· ${queue.length}`}
               </span>
               <button title="Close queue" aria-label="Close queue" onClick={() => { setShowQueue(false); setQueueUrl('') }}
                 style={{ background: 'none', border: 'none', color: 'var(--c-muted)', cursor: 'pointer', fontSize: '1.2rem', lineHeight: 1 }}><Icon name="close" size={16} /></button>
             </div>
 
             {/* URL input */}
-            <div style={{ padding: '0.85rem 1.25rem', borderBottom: '1px solid var(--c-border)', flexShrink: 0 }}>
+            <div style={{ padding: '8px 16px', flexShrink: 0 }}>
               <div style={{ display: 'flex', gap: 8 }}>
                 <input
                   title="YouTube link for queue" aria-label="YouTube link for queue"
                   value={queueUrl}
                   onChange={(e) => setQueueUrl(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleAddUrlToQueue()}
-                  placeholder="YouTube link yahan paste karo..."
+                  placeholder="Paste a YouTube link here..."
                   autoFocus
-                  style={{ flex: 1, padding: '10px 14px', background: 'rgba(255,255,255,0.07)', border: '1px solid var(--c-border)', borderRadius: 12, color: 'var(--c-text)', fontSize: '0.9rem', fontFamily: 'var(--font-body)', outline: 'none' }}
-                  onFocus={(e) => { e.target.style.borderColor = theme.primary; e.target.style.boxShadow = `0 0 0 3px ${theme.primary}20` }}
-                  onBlur={(e) => { e.target.style.borderColor = 'var(--c-border)'; e.target.style.boxShadow = 'none' }}
+                  style={{ flex: 1, padding: '10px 12px', background: 'rgba(255,255,255,0.04)', border: 'none', borderRadius: 8, color: 'var(--c-text)', fontSize: '0.85rem', fontFamily: 'var(--font-body)' }}
                 />
                 <button title="Add track to queue" aria-label="Add track to queue" onClick={handleAddUrlToQueue} disabled={queueAdding}
                   style={{ background: theme.primary, color: '#0e0b09', border: 'none', borderRadius: 12, padding: '10px 16px', fontSize: '0.85rem', fontWeight: 700, cursor: queueAdding ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-body)', whiteSpace: 'nowrap', opacity: queueAdding ? 0.7 : 1 }}>
@@ -637,15 +509,15 @@ function PlayerContent() {
             </div>
 
             {/* Queue list */}
-            <div style={{ overflowY: 'auto', padding: '0.75rem 1.25rem 1.5rem', flex: 1 }}>
+            <div style={{ overflowY: 'auto', padding: '4px 16px 16px', flex: 1 }}>
               {queue.length === 0 ? (
-                <p style={{ color: 'var(--c-muted)', textAlign: 'center', fontSize: '0.8rem', padding: '1.5rem 0', fontFamily: 'var(--font-mono)' }}>
-                  Queue khaali hai — upar link paste karo
+                <p style={{ color: 'var(--c-muted)', textAlign: 'center', fontSize: '0.75rem', padding: '12px 0', fontFamily: 'var(--font-body)' }}>
+                  No tracks yet.
                 </p>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {queue.map((q, i) => (
-                    <div key={q.id + i} style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'var(--c-surface)', borderRadius: 10, padding: '9px 12px' }}>
+                    <div key={q.id + i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0' }}>
                       <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', color: 'var(--c-muted)', width: 16, flexShrink: 0, textAlign: 'center' }}>{i + 1}</span>
                       {q.thumbnail && <img src={q.thumbnail} alt="" style={{ width: 40, height: 30, borderRadius: 5, objectFit: 'cover', flexShrink: 0 }} />}
                       <div style={{ flex: 1, overflow: 'hidden' }}>
@@ -660,8 +532,53 @@ function PlayerContent() {
               )}
             </div>
           </div>
-        </>
-      )}
+          )}
+          <div id="vibe-options" className="vibe-selector" hidden={!showVibes} role="region" aria-label="Choose vibe" style={{ padding: '0 1.25rem 0.5rem' }}>
+          <div className="vibe-grid">
+            {vibeList.map((v) => (
+              <button aria-label={v.label} title={v.label} aria-pressed={vibe === v.id} key={v.id} onClick={() => handleVibeChange(v.id as VibeId)}
+                style={{ flexShrink: 0, background: vibe === v.id ? theme.primary : 'var(--c-surface)', border: `1.5px solid ${vibe === v.id ? theme.primary : 'var(--c-border)'}`, borderRadius: 100, padding: '7px 16px', fontSize: '0.8rem', fontWeight: 600, color: vibe === v.id ? '#0e0b09' : 'var(--c-muted)', cursor: 'pointer', fontFamily: 'var(--font-body)', whiteSpace: 'nowrap', transition: 'all 0.2s', boxShadow: vibe === v.id ? `0 0 18px ${theme.primary}50` : 'none' }}>
+                <Icon name={v.icon} size={20} />
+              </button>
+            ))}
+          </div>
+        </div>
+          </>
+        } leftControls={
+          <>
+            <button title="Loop track" aria-label="Loop track" aria-pressed={loop} onClick={() => { setLoop(l => !l); showToast(loop ? 'Loop off' : 'Loop on') }}>
+              <Icon name="repeat" size={19} />
+            </button>
+            <button title={showQueue ? 'Close queue' : 'Open queue'} aria-label={showQueue ? 'Close queue' : 'Open queue'} aria-expanded={showQueue} aria-controls="play-queue" onClick={() => { setShowQueue(open => !open); setShowVibes(false); setShowCustom(false); if (showQueue) setQueueUrl(''); }}>
+              <Icon name="queue" size={19} />
+            </button>
+          </>
+        } rightControls={
+          <>
+            <button title="Download vibe card" aria-label="Download vibe card" onClick={handleShareCard}>
+              <Icon name="card" size={19} />
+            </button>
+            <button title="Copy track link" aria-label="Copy track link" onClick={shareLink}>
+              <Icon name="link" size={19} />
+            </button>
+          </>
+        } separatorControl={
+          <button
+            aria-label={showVibes ? 'Hide vibe options' : 'Choose vibe'}
+            title={showVibes ? 'Hide vibe options' : 'Choose vibe'}
+            aria-expanded={showVibes}
+            aria-controls="vibe-options"
+            onClick={() => {
+              setShowVibes(open => !open)
+              setShowQueue(false)
+              setQueueUrl('')
+              if (showVibes) setShowCustom(false)
+            }}
+          >
+            <Icon name={showVibes ? 'down' : 'up'} size={22} />
+          </button>
+        } />
+      </div>
 
       {/* Toast */}
       <div role="status" style={{ visibility: toast.show ? 'visible' : 'hidden', maxWidth: 'calc(100vw - 32px)', position: 'fixed', bottom: 24, left: '50%', transform: `translateX(-50%) translateY(${toast.show ? 0 : 80}px)`, background: theme.primary, color: '#0e0b09', padding: '10px 22px', borderRadius: 100, fontSize: '0.85rem', fontWeight: 600, zIndex: 999, transition: 'transform 0.35s cubic-bezier(0.4,0,0.2,1)', whiteSpace: 'normal', fontFamily: 'var(--font-body)', pointerEvents: 'none' }}>

@@ -25,7 +25,20 @@ export async function GET(req: NextRequest) {
       const value = info.http_headers?.[name]
       if (typeof value === 'string') headers.set(name, value)
     }
-    if (range) headers.set('Range', range)
+    if (range) {
+      // Bound browser requests such as bytes=0-; YouTube can reject an
+      // open-ended media request. The browser requests subsequent chunks
+      // using the upstream Content-Range total, which we preserve below.
+      const match = /^bytes=(\d+)-(\d*)$/.exec(range)
+      if (match) {
+        const start = BigInt(match[1])
+        const chunkEnd = start + BigInt(1024 * 1024 - 1)
+        const requestedEnd = match[2] ? BigInt(match[2]) : chunkEnd
+        headers.set('Range', `bytes=${start}-${requestedEnd < chunkEnd ? requestedEnd : chunkEnd}`)
+      } else {
+        headers.set('Range', range)
+      }
+    }
     const response = await fetch(info.url, { headers, signal: req.signal, cache: 'no-store' })
     if (!response.ok && response.status !== 416) {
       await response.body?.cancel()
